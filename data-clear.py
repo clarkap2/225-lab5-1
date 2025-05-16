@@ -7,6 +7,7 @@ def connect_db():
     return sqlite3.connect(DATABASE)
 
 def is_junk_task(description):
+    # Define keywords and patterns commonly used in DAST or fuzzing
     junk_keywords = [
         'alert(', '<script', '<a>', '%3c', '%3e', '</', '/>', '><', '--', 'UNION', 'SELECT', 'sqlmap', 'Arachni',
         'cgAhLG', 'nwtbe', 'wuh77', 'yh380', 'dv5na'
@@ -15,6 +16,7 @@ def is_junk_task(description):
         if keyword.lower() in description.lower():
             return True
 
+    # Optional: regex pattern for very short or random strings (e.g., 5–10 lowercase letters/numbers)
     if re.fullmatch(r'[a-z0-9]{5,10}', description):
         return True
 
