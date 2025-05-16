@@ -4,8 +4,7 @@ import os
 
 app = Flask(__name__)
 
-# Use a local SQLite database file for portability
-DATABASE = 'shopping.db'
+DATABASE = '/nfs/demo.db'
 
 def get_db():
     db = sqlite3.connect(DATABASE)
@@ -16,10 +15,10 @@ def init_db():
     with app.app_context():
         db = get_db()
         db.execute('''
-            CREATE TABLE IF NOT EXISTS shopping_list (
+            CREATE TABLE IF NOT EXISTS tasks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                item TEXT NOT NULL,
-                status TEXT DEFAULT 'Needed'
+                description TEXT NOT NULL,
+                status TEXT DEFAULT 'Pending'
             );
         ''')
         db.commit()
@@ -31,51 +30,52 @@ def index():
 
     if request.method == 'POST':
         if request.form.get('action') == 'delete':
-            item_id = request.form.get('item_id')
-            db.execute('DELETE FROM shopping_list WHERE id = ?', (item_id,))
+            task_id = request.form.get('task_id')
+            db.execute('DELETE FROM tasks WHERE id = ?', (task_id,))
             db.commit()
-            message = 'Item deleted.'
+            message = 'Task deleted successfully.'
         elif request.form.get('action') == 'update':
-            item_id = request.form.get('item_id')
+            task_id = request.form.get('task_id')
             new_status = request.form.get('status')
-            db.execute('UPDATE shopping_list SET status = ? WHERE id = ?', (new_status, item_id))
+            db.execute('UPDATE tasks SET status = ? WHERE id = ?', (new_status, task_id))
             db.commit()
-            message = 'Item status updated.'
+            message = 'Task status updated.'
         else:
-            item_name = request.form.get('item')
-            if item_name:
-                db.execute('INSERT INTO shopping_list (item) VALUES (?)', (item_name,))
+            description = request.form.get('description')
+            if description:
+                db.execute('INSERT INTO tasks (description) VALUES (?)', (description,))
                 db.commit()
-                message = 'Item added.'
+                message = 'Task added successfully.'
             else:
-                message = 'Please enter an item name.'
+                message = 'Missing task description.'
 
-    items = db.execute('SELECT * FROM shopping_list').fetchall()
+    tasks = db.execute('SELECT * FROM tasks').fetchall()
     return render_template_string('''
         <!DOCTYPE html>
         <html>
-        <head><title>Shopping List</title></head>
+        <head><title>Task Manager</title></head>
         <body>
-            <h2>Add Item</h2>
+            <h2>Add Task</h2>
             <form method="POST" action="/">
-                <input type="text" name="item" placeholder="Enter an item" required>
-                <input type="submit" value="Add Item">
+                <input type="text" name="description" placeholder="Enter a task" required>
+                <input type="submit" value="Add Task">
             </form>
             <p>{{ message }}</p>
-            <h3>Shopping List</h3>
-            {% if items %}
+            <h3>Task List</h3>
+            {% if tasks %}
                 <table border="1">
-                    <tr><th>Item</th><th>Status</th><th>Update</th><th>Delete</th></tr>
-                    {% for item in items %}
+                    <tr><th>Description</th><th>Status</th><th>Update</th><th>Delete</th></tr>
+                    {% for task in tasks %}
                     <tr>
-                        <td>{{ item['item'] }}</td>
-                        <td>{{ item['status'] }}</td>
+                        <td>{{ task['description'] }}</td>
+                        <td>{{ task['status'] }}</td>
                         <td>
                             <form method="POST" action="/">
-                                <input type="hidden" name="item_id" value="{{ item['id'] }}">
+                                <input type="hidden" name="task_id" value="{{ task['id'] }}">
                                 <select name="status">
-                                    <option value="Needed" {% if item['status'] == 'Needed' %}selected{% endif %}>Needed</option>
-                                    <option value="Purchased" {% if item['status'] == 'Purchased' %}selected{% endif %}>Purchased</option>
+                                    <option value="Pending" {% if task['status'] == 'Pending' %}selected{% endif %}>Pending</option>
+                                    <option value="In Progress" {% if task['status'] == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                    <option value="Done" {% if task['status'] == 'Done' %}selected{% endif %}>Done</option>
                                 </select>
                                 <input type="hidden" name="action" value="update">
                                 <input type="submit" value="Update">
@@ -83,7 +83,7 @@ def index():
                         </td>
                         <td>
                             <form method="POST" action="/">
-                                <input type="hidden" name="item_id" value="{{ item['id'] }}">
+                                <input type="hidden" name="task_id" value="{{ task['id'] }}">
                                 <input type="hidden" name="action" value="delete">
                                 <input type="submit" value="Delete">
                             </form>
@@ -92,11 +92,11 @@ def index():
                     {% endfor %}
                 </table>
             {% else %}
-                <p>No items in your shopping list.</p>
+                <p>No tasks available.</p>
             {% endif %}
         </body>
         </html>
-    ''', message=message, items=items)
+    ''', message=message, tasks=tasks)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
