@@ -1,18 +1,18 @@
 import sqlite3
 
-DATABASE = 'shopping.db'
+DATABASE = '/nfs/demo.db'
 
 def connect_db():
     return sqlite3.connect(DATABASE)
 
-def generate_test_items(num_items):
+def generate_test_tasks(num_tasks):
     db = connect_db()
-    for i in range(num_items):
-        item = f'Test Item {i}'
-        db.execute('INSERT INTO shopping_list (item, status) VALUES (?, ?)', (item, 'Needed'))
+    for i in range(num_tasks):
+        desc = f'Test Task {i}'
+        db.execute('INSERT INTO tasks (description, status) VALUES (?, ?)', (desc, 'Pending'))
     db.commit()
-    print(f'{num_items} test items added to the shopping list.')
+    print(f'{num_tasks} test tasks added to the database.')
     db.close()
 
 if __name__ == '__main__':
-    generate_test_items(10)
+    generate_test_tasks(10)
